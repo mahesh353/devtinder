@@ -4,20 +4,15 @@ const User = require("./config/models/user");
 
 const app = express();
 
+app.use(express.json());
+
 app.get("/", (req, res) => {
   res.send("Welcome to the DevTinder API");
 });
 
 app.post("/signup", async (req, res) => {
   try {
-    const newUser = new User({
-      firstName: "Mahesh",
-      lastName: "Patil",
-      emailId: "MaheshPatil@gmail.com",
-      password: "Mahesh@123#",
-      age: 35,
-      gender: "Male"
-    });
+    const newUser = new User(req.body);
 
     await newUser.save();
     
