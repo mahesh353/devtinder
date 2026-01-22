@@ -1,6 +1,9 @@
 const express = require("express");
+const bcrypt = require("bcrypt");
+
 const connectDb = require("./config/database");
 const User = require("./config/models/user");
+
 
 const app = express();
 
@@ -31,7 +34,22 @@ app.get("/feed", async (req, res) => {
 
 app.post("/signup", async (req, res) => {
   try {
-    const newUser = new User(req.body);
+
+    const { firstName, lastName, emailId, password, age, gender, skills } = req.body;
+
+    // encrypt the password
+
+    var encryptedPassword = bcrypt.hashSync(password, 10);
+
+    const newUser = new User({
+      firstName,
+      lastName,
+      emailId,
+      password: encryptedPassword,
+      age,
+      gender,
+      skills
+    });
 
     await newUser.save();
 
