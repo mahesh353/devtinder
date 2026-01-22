@@ -39,7 +39,7 @@ app.post("/signup", async (req, res) => {
 
     // encrypt the password
 
-    var encryptedPassword = bcrypt.hashSync(password, 10);
+    var encryptedPassword = await bcrypt.hashSync(password, 10);
 
     const newUser = new User({
       firstName,
@@ -59,14 +59,20 @@ app.post("/signup", async (req, res) => {
   }
 });
 
-app.delete("/user/:id", async (req, res) => {
-  const userId = req.params.id;
+
+app.post("/login", async (req, res) => {
+  const { emailId, password } = req.body;   
   try {
-    const deletedUser = await User.findByIdAndDelete(userId);
-    if (deletedUser) {
-      res.status(200).send("User deleted successfully");
+    const user = await User.findOne({ emailId: emailId });
+    if (user) {
+      const passwordMatch = await bcrypt.compare(password, user.password);
+      if (passwordMatch) {
+        res.status(200).send("Login successful");
+      } else {
+        res.status(401).send("Invalid credentials");
+      }   
     } else {
-      res.status(404).send("User not found");
+      res.status(404).send("Invalid credentials");
     }
   } catch (error) {
     res.status(500).send("Error deleting user: " + error.message);
