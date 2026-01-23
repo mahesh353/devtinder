@@ -1,5 +1,6 @@
 const express = require("express");
 const bcrypt = require("bcrypt");
+const cookieParser = require("cookie-parser");
 
 const connectDb = require("./config/database");
 const User = require("./config/models/user");
@@ -8,6 +9,7 @@ const User = require("./config/models/user");
 const app = express();
 
 app.use(express.json());
+app.use(cookieParser());
 
 app.get("/user", async (req, res) => {
   const emailId = req.body.emailId;
@@ -67,6 +69,9 @@ app.post("/login", async (req, res) => {
     if (user) {
       const passwordMatch = await bcrypt.compare(password, user.password);
       if (passwordMatch) {
+
+        res.cookie("token","sfsfiwkrhwr");
+
         res.status(200).send("Login successful");
       } else {
         res.status(401).send("Invalid credentials");
@@ -78,6 +83,24 @@ app.post("/login", async (req, res) => {
     res.status(500).send("Error deleting user: " + error.message);
   }
 });
+
+app.get("/profile", async (req, res) => {
+
+  const { token } = req.cookies;
+  try {
+    // const user = await User.findOne({ emailId: emailId });
+    // if (user) {
+    //   res.status(200).json(user); 
+    // } else {
+    //   res.status(404).send("User not found");
+    // }
+    console.log("Token received: ", token);
+    res.status(200).send("Profile data for token: " + token);
+  } catch (error) {
+    res.status(500).send("Error retrieving profile: " + error.message);
+  } 
+});
+
 
 app.patch("/user/:id", async (req, res) => {
   const userId = req.params.id;
