@@ -5,7 +5,7 @@ const jwt = require("jsonwebtoken");
 
 const connectDb = require("./config/database");
 const User = require("./config/models/user");
-
+const { userAuth } = require("./middleware/userAuth");
 
 const app = express();
 
@@ -37,8 +37,8 @@ app.get("/feed", async (req, res) => {
 
 app.post("/signup", async (req, res) => {
   try {
-
-    const { firstName, lastName, emailId, password, age, gender, skills } = req.body;
+    const { firstName, lastName, emailId, password, age, gender, skills } =
+      req.body;
 
     // encrypt the password
 
@@ -51,7 +51,7 @@ app.post("/signup", async (req, res) => {
       password: encryptedPassword,
       age,
       gender,
-      skills
+      skills,
     });
 
     await newUser.save();
@@ -62,25 +62,20 @@ app.post("/signup", async (req, res) => {
   }
 });
 
-
 app.post("/login", async (req, res) => {
-  const { emailId, password } = req.body;   
+  const { emailId, password } = req.body;
   try {
     const user = await User.findOne({ emailId: emailId });
     if (user) {
       const passwordMatch = await bcrypt.compare(password, user.password);
       if (passwordMatch) {
-
-        const token = jwt.sign(
-          { userId: user._id},
-          "Mahesh@123"
-        );
+        const token = jwt.sign({ userId: user._id }, "Mahesh@123");
 
         res.cookie("token", token);
         res.status(200).send("Login successful");
       } else {
         res.status(401).send("Invalid credentials");
-      }   
+      }
     } else {
       res.status(404).send("Invalid credentials");
     }
@@ -89,51 +84,39 @@ app.post("/login", async (req, res) => {
   }
 });
 
-app.get("/profile", async (req, res) => {
-
-  
+app.get("/profile", userAuth, async (req, res) => {
   try {
-    
-    const { token } = req.cookies;
-    const decodedToken = jwt.verify(token, "Mahesh@123");
-    const { userId } = decodedToken;
-
-    const user = await User.findById(userId);
-    if (!user) {
-      return res.status(404).send("User not found");
-    }
-
+    const user = req.user;
     res.status(200).send("Profile data for token: " + user);
   } catch (error) {
     res.status(500).send("Error retrieving profile: " + error.message);
-  } 
+  }
 });
-
 
 app.patch("/user/:id", async (req, res) => {
   const userId = req.params.id;
   const updates = req.body;
   try {
-
     const ALLOWED_UPDATES = [
       "password",
       "age",
       "gender",
       "bio",
       "skills",
-      "profilePicture"];
+      "profilePicture",
+    ];
 
     const isValidOperation = Object.keys(updates).every((update) =>
-      ALLOWED_UPDATES.includes(update)
+      ALLOWED_UPDATES.includes(update),
     );
-    
+
     if (!isValidOperation) {
       throw new Error("Invalid updates!");
     }
 
-
     const updatedUser = await User.findByIdAndUpdate(userId, updates, {
-      new: true, runValidators: true
+      new: true,
+      runValidators: true,
     });
     if (updatedUser) {
       res.status(200).json(updatedUser);
