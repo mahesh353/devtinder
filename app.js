@@ -1,6 +1,7 @@
 const express = require("express");
 const bcrypt = require("bcrypt");
 const cookieParser = require("cookie-parser");
+const jwt = require("jsonwebtoken");
 
 const connectDb = require("./config/database");
 const User = require("./config/models/user");
@@ -70,8 +71,12 @@ app.post("/login", async (req, res) => {
       const passwordMatch = await bcrypt.compare(password, user.password);
       if (passwordMatch) {
 
-        res.cookie("token","sfsfiwkrhwr");
+        const token = jwt.sign(
+          { userId: user._id},
+          "Mahesh@123"
+        );
 
+        res.cookie("token", token);
         res.status(200).send("Login successful");
       } else {
         res.status(401).send("Invalid credentials");
@@ -86,16 +91,19 @@ app.post("/login", async (req, res) => {
 
 app.get("/profile", async (req, res) => {
 
-  const { token } = req.cookies;
+  
   try {
-    // const user = await User.findOne({ emailId: emailId });
-    // if (user) {
-    //   res.status(200).json(user); 
-    // } else {
-    //   res.status(404).send("User not found");
-    // }
-    console.log("Token received: ", token);
-    res.status(200).send("Profile data for token: " + token);
+    
+    const { token } = req.cookies;
+    const decodedToken = jwt.verify(token, "Mahesh@123");
+    const { userId } = decodedToken;
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).send("User not found");
+    }
+
+    res.status(200).send("Profile data for token: " + user);
   } catch (error) {
     res.status(500).send("Error retrieving profile: " + error.message);
   } 
