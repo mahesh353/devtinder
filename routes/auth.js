@@ -1,5 +1,5 @@
 const express = require("express");
-const User = require("../config/models/user");
+const User = require("../models/user");
 const authRouter = express.Router();
 const bcrypt = require("bcrypt");
 
@@ -54,5 +54,14 @@ authRouter.post("/login", async (req, res) => {
     res.status(500).send("Error while loggin in user: " + error.message);
   }
 });
+
+authRouter.post("/logout", (req, res) => {
+  res.cookie("token", null, {
+    expires: new Date(Date.now()),
+  });
+  res.status(200).send("Logout successful");
+});
+
+
 
 module.exports = authRouter;
