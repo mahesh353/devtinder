@@ -64,4 +64,52 @@ requestsRouter.post(
   },
 );
 
+requestsRouter.post(
+  "/requests/review/:status/:requestId",
+  userAuth,
+  async (req, res) => {
+    try {
+      const loggedInUser = req.user;
+      const { status, requestId } = req.params;
+
+      // validate the data & status
+
+      const validStatuses = ["accepted", "rejected"];
+
+      if (!validStatuses.includes(status)) {
+        return res.status(400).json({ message: "Status not allowed" });
+      }
+
+      const connectionRequest = await ConnnectionRequest.findOne({
+        _id: requestId,
+        toUserId: loggedInUser._id,
+        status: "interested",
+      });
+
+      if (!connectionRequest) {
+        return res
+          .status(404)
+          .json({ message: "Connection request not found" });
+      }
+      // if (!connectionRequest.toUserId.equals(reviewer._id)) {
+      //   return res
+      //     .status(403)
+      //     .json({ message: "Not authorized to review this request" });
+      // }
+      connectionRequest.status = status.toLowerCase();
+      const savedConnectionRequest = await connectionRequest.save();
+      res
+        .status(200)
+        .json({
+          message: "Connection request accepted successfully",
+          data: savedConnectionRequest,
+        });
+    } catch (error) {
+      res
+        .status(500)
+        .send("Error reviewing connection request: " + error.message);
+    }
+  },
+);
+
 module.exports = requestsRouter;
